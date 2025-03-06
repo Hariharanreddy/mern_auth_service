@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "dev": "cross-env NODE_ENV=dev nodemon src/server.ts",
-        "build": "tsc",
+        "build": "tsc --project tsconfig.build.json",
         "format:check": "prettier . --check",
         "format:fix": "prettier . --write",
         "lint": "eslint .",
