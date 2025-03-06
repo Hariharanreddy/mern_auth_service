@@ -13,15 +13,21 @@ export default checkSchema({
         errorMessage: "First name is required!",
         notEmpty: true,
         trim: true,
+        isAlpha: {
+            errorMessage: "First name should contain only alphabets!",
+        },
     },
     lastName: {
         errorMessage: "Last name is required!",
         notEmpty: true,
         trim: true,
+        isAlpha: {
+            errorMessage: "Last name should contain only alphabets!",
+        },
     },
     password: {
         trim: true,
-        errorMessage: "Last name is required!",
+        errorMessage: "Password is required!",
         notEmpty: true,
         isLength: {
             options: {
