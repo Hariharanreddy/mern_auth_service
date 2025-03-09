@@ -1,1 +1,1 @@
-Our awesome auth service
+Our awesome auth microservice
