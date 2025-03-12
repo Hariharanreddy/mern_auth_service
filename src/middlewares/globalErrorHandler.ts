@@ -35,7 +35,7 @@ export const globalErrorHandler = (
             {
                 ref: errorId,
                 type: err.name,
-                msg: message,
+                message: message,
                 path: req.path,
                 method: req.method,
                 location: "server",
