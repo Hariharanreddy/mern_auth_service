@@ -67,8 +67,8 @@ jobs:
 
       # Step 6: Run SonarCloud static code analysis
       # Checks for bugs, vulnerabilities, and code smells
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
