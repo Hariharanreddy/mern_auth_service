@@ -115,10 +115,7 @@ jobs:
 
       # Step 3: Build Docker image using production Dockerfile
       - name: Build Docker image
-        run: docker build \
-             -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
-             --platform linux/amd64 \
-             -f docker/prod/Dockerfile .
+        run: docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} --platform linux/amd64 -f docker/prod/Dockerfile .
 
       # Step 4: Push Docker image to Docker Hub
       - name: Push Docker image to Docker Hub
