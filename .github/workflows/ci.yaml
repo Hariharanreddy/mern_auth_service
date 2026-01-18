@@ -1,58 +1,125 @@
+# Name of the GitHub Actions workflow (shown in Actions tab)
 name: CI
-on:
-    pull_request:
-        branches:
-            - main
-    push:
-        branches:
-            - main
-jobs:
-    build-and-test:
-        name: Build the project
-        runs-on: ubuntu-latest
-        # if: github.event_name == 'pull_request'
-        steps:
-            - uses: actions/checkout@v3
-            - name: Install dependencies
-              run: npm ci
-            - name: Run eslint
-              run: npm run lint
-            - name: Test and coverage
-              run: npm run test
-              env:
-                  DB_HOST: ${{ secrets.TEST_DB_HOST }}
-                  DB_PORT: ${{ secrets.TEST_DB_PORT }}
-                  DB_USERNAME: ${{ secrets.TEST_DB_USERNAME }}
-                  DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-                  DB_NAME: ${{ secrets.TEST_DB_NAME }}
-                  REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
-                  JWKS_URI: ${{ secrets.JWKS_URI }}
-                  PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-            - name: Build-ts
-              run: npm run build
-            - name: SonarCloud Scan
-              uses: SonarSource/sonarcloud-github-action@master
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-    build-and-push-docker:
-        name: Build and Push Docker Image
-        needs: build-and-test
-        runs-on: ubuntu-latest
+# Define when this workflow should run
+on:
+  # Run CI when a Pull Request is created or updated
+  # AND the target branch is `main`
+  pull_request:
+    branches:
+      - main
+
+  # Run CI when code is pushed directly to `main`
+  push:
+    branches:
+      - main
+
+jobs:
+  # -------------------------------
+  # JOB 1: Build and Test the code
+  # -------------------------------
+  build-and-test:
+    # Friendly job name shown in GitHub UI
+    name: Build the project
+
+    # Use a fresh Ubuntu Linux machine
+    runs-on: ubuntu-latest
+
+    # NOTE:
+    # There is NO `if:` condition here,
+    # so this job runs for BOTH:
+    # - pull requests
+    # - pushes to main
+
+    steps:
+      # Step 1: Download repository code into the runner
+      # Without this, no files (package.json, src, etc.) exist
+      - uses: actions/checkout@v3
+
+      # Step 2: Install exact dependencies from package-lock.json
+      # `npm ci` ensures clean and repeatable installs
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 3: Run ESLint to check code style and rules
+      # Fails CI if lint errors exist
+      - name: Run eslint
+        run: npm run lint
+
+      # Step 4: Run tests and collect coverage
+      # Environment variables are injected securely from GitHub Secrets
+      - name: Test and coverage
+        run: npm run test
         env:
-            IMAGE_NAME: hariharanreddy/mernstack_auth_service # codersgyan/mernstack_auth_service:build-2
-            IMAGE_TAG: build-${{ github.run_number }}
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v1
-              with:
-                  username: ${{ secrets.DOCKERHUB_USERNAME }}
-                  password: ${{ secrets.DOCKERHUB_PASSWORD }}
-            - name: Build Docker image
-              run: docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} --platform linux/amd64 -f docker/prod/Dockerfile .
-            - name: Push Docker image to Docker Hub
-              run: docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          DB_HOST: ${{ secrets.TEST_DB_HOST }}
+          DB_PORT: ${{ secrets.TEST_DB_PORT }}
+          DB_USERNAME: ${{ secrets.TEST_DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+          DB_NAME: ${{ secrets.TEST_DB_NAME }}
+          REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
+          JWKS_URI: ${{ secrets.JWKS_URI }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+
+      # Step 5: Build the TypeScript project
+      # Ensures code compiles successfully
+      - name: Build-ts
+        run: npm run build
+
+      # Step 6: Run SonarCloud static code analysis
+      # Checks for bugs, vulnerabilities, and code smells
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # -----------------------------------
+  # JOB 2: Build and Push Docker Image
+  # -----------------------------------
+  build-and-push-docker:
+    # Friendly job name shown in GitHub UI
+    name: Build and Push Docker Image
+
+    # This job will run ONLY AFTER build-and-test succeeds
+    needs: build-and-test
+
+    # Use a fresh Ubuntu Linux machine
+    runs-on: ubuntu-latest
+
+    # Environment variables used by this job
+    env:
+      # Docker Hub repository name
+      IMAGE_NAME: hariharanreddy/mernstack_auth_service
+
+      # Unique image tag using GitHub run number
+      IMAGE_TAG: build-${{ github.run_number }}
+
+    # IMPORTANT SAFETY CONDITION:
+    # This job runs ONLY when:
+    # 1. Event is a push (not PR)
+    # 2. Branch is main
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      # Step 1: Download repository code again
+      # Each job runs on a fresh machine
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Log in to Docker Hub securely
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      # Step 3: Build Docker image using production Dockerfile
+      - name: Build Docker image
+        run: docker build \
+             -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+             --platform linux/amd64 \
+             -f docker/prod/Dockerfile .
+
+      # Step 4: Push Docker image to Docker Hub
+      - name: Push Docker image to Docker Hub
+        run: docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
