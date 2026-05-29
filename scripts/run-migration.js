@@ -5,7 +5,7 @@ const { exec } = require("child_process");
 function runMigration() {
     // Execute the npm run migration command
     exec(
-        "NODE_ENV=migration npm run migration:run -- -d src/config/data-source.ts",
+        "npm run migration:run -- -d src/config/data-source.ts",
         (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing migration: ${error.message}`);
