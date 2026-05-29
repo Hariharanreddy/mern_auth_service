@@ -1,37 +1,37 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  # 1. PostgreSQL Database Service
-  postgres-db:
-    image: postgres:16
-    container_name: auth-service-db
-    restart: always
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: mernstack_auth_service
-    ports:
-      - "5432:5432" # Exposes DB to host machine (localhost:5432) so you can view it in PGAdmin/DBeaver
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
+    # 1. PostgreSQL Database Service
+    postgres-db:
+        image: postgres:16
+        container_name: auth-service-db
+        restart: always
+        environment:
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+            POSTGRES_DB: mernstack_auth_service
+        ports:
+            - "5432:5432" # Exposes DB to host machine (localhost:5432) so you can view it in PGAdmin/DBeaver
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
 
-  # 2. Authentication Microservice Service
-  auth-service:
-    image: auth-service:dev
-    build:
-      context: .
-      dockerfile: docker/dev/Dockerfile
-    container_name: mernspace-c-auth-service
-    ports:
-      - "5501:5501" # Exposes auth service port (localhost:5501)
-    environment:
-      - NODE_ENV=dev
-      - DB_HOST=postgres-db # Overrides localhost in .env.dev with the container name for DB communication
-    volumes:
-      - .:/usr/src/app # Mounts local files for live-reloading (hot-reload)
-      - /usr/src/app/node_modules # Prevents local node_modules from overwriting container's node_modules
-    depends_on:
-      - postgres-db
+    # 2. Authentication Microservice Service
+    auth-service:
+        image: auth-service:dev
+        build:
+            context: .
+            dockerfile: docker/dev/Dockerfile
+        container_name: mernspace-c-auth-service
+        ports:
+            - "5501:5501" # Exposes auth service port (localhost:5501)
+        environment:
+            - NODE_ENV=dev
+            - DB_HOST=postgres-db # Overrides localhost in .env.dev with the container name for DB communication
+        volumes:
+            - .:/usr/src/app # Mounts local files for live-reloading (hot-reload)
+            - /usr/src/app/node_modules # Prevents local node_modules from overwriting container's node_modules
+        depends_on:
+            - postgres-db
 
 volumes:
-  postgres-data:
+    postgres-data:
