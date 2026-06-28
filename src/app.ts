@@ -21,6 +21,7 @@ app.use(express.json());
 app.get("/", (req, res) => {
     res.send("Welcome to Auth service from Docker");
 });
+app.disable("etag");
 
 app.use("/auth", authRouter);
 app.use("/tenants", tenantRouter);
